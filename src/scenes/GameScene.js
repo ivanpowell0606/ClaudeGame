@@ -5,6 +5,7 @@ import {
   ENEMY_PATH_TILES,
   tileToWorld,
 } from '../config/grid.js';
+import Turret from '../entities/Turret.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -14,6 +15,11 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.drawGrid();
     this.drawPath();
+
+    // Placeholder turret so we can see it on the grid. Placement will
+    // become interactive later.
+    const { x, y } = tileToWorld([7, 4]);
+    new Turret(this, x, y);
   }
 
   drawGrid() {
