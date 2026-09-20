@@ -4,6 +4,7 @@ import {
   tileToWorld,
 } from '../config/grid.js';
 import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
+import Enemy from '../entities/Enemy.js';
 import { distanceToSegment } from '../utils/geometry.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -21,6 +22,16 @@ export default class GameScene extends Phaser.Scene {
       if (this.overlapsTurret(pointer.x, pointer.y)) return;
       this.turrets.push(new Turret(this, pointer.x, pointer.y));
     });
+
+    // Test wave: a single enemy walking the path.
+    this.enemy = new Enemy(this, this.pathPoints);
+  }
+
+  update(time, delta) {
+    if (!this.enemy) return;
+
+    this.enemy.update(delta);
+    this.turrets.forEach((turret) => turret.trackTarget(this.enemy));
   }
 
   drawPath() {
