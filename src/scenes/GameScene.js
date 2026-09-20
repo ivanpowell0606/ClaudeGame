@@ -35,11 +35,12 @@ export default class GameScene extends Phaser.Scene {
     this.enemy.update(delta);
 
     this.turrets.forEach((turret) => {
-      const inRange = turret.trackTarget(this.enemy);
+      const inRange = turret.trackTarget(this.enemy, this.enemy.getVelocity());
       if (inRange && turret.canFire(time)) {
         turret.markFired(time);
         const tip = turret.getBarrelTip();
-        const angle = Phaser.Math.Angle.Between(tip.x, tip.y, this.enemy.x, this.enemy.y);
+        const aim = turret.aimPoint;
+        const angle = Phaser.Math.Angle.Between(tip.x, tip.y, aim.x, aim.y);
         this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
       }
     });

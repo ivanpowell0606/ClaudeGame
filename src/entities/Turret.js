@@ -1,5 +1,9 @@
 // Turret with a rotating gun (head + barrel) on a static base.
-// Tracks and fires at the enemy while it's within range.
+// Tracks and fires at the enemy while it's within range, leading the
+// shot to compensate for bullet travel time.
+
+import { BULLET_SPEED } from './Bullet.js';
+import { calculateInterceptPoint } from '../utils/geometry.js';
 
 export const TURRET_RADIUS = 22;
 export const TURRET_RANGE = 160;
@@ -12,6 +16,7 @@ export default class Turret extends Phaser.GameObjects.Container {
     scene.add.existing(this);
 
     this.lastFiredAt = -Infinity;
+    this.aimPoint = null;
 
     const rangeCircle = scene.add
       .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
@@ -27,13 +32,16 @@ export default class Turret extends Phaser.GameObjects.Container {
     this.add([rangeCircle, base, this.gun]);
   }
 
-  // Rotates toward the target if it's in range. Returns whether it's in range.
-  trackTarget(target) {
+  // Rotates toward the predicted intercept point if the target is in range.
+  // Returns whether it's in range.
+  trackTarget(target, targetVelocity) {
     const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
     const inRange = distance <= TURRET_RANGE;
 
     if (inRange) {
-      this.gun.rotation = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+      this.aimPoint =
+        calculateInterceptPoint(this, target, targetVelocity, BULLET_SPEED) || target;
+      this.gun.rotation = Phaser.Math.Angle.Between(this.x, this.y, this.aimPoint.x, this.aimPoint.y);
     }
 
     return inRange;
