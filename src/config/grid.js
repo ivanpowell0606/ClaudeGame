@@ -8,6 +8,8 @@ export const GRID_ROWS = 10;
 export const GAME_WIDTH = GRID_COLS * TILE_SIZE;
 export const GAME_HEIGHT = GRID_ROWS * TILE_SIZE;
 
+export const PATH_WIDTH = TILE_SIZE * 0.6;
+
 // Path enemies walk along, as a sequence of tile coordinates.
 export const ENEMY_PATH_TILES = [
   [0, 4],
