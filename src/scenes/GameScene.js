@@ -5,6 +5,7 @@ import {
 } from '../config/grid.js';
 import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
 import Enemy from '../entities/Enemy.js';
+import Bullet from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -15,6 +16,7 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
     this.turrets = [];
+    this.bullets = [];
     this.drawPath();
 
     this.input.on('pointerdown', (pointer) => {
@@ -31,7 +33,25 @@ export default class GameScene extends Phaser.Scene {
     if (!this.enemy) return;
 
     this.enemy.update(delta);
-    this.turrets.forEach((turret) => turret.trackTarget(this.enemy));
+
+    this.turrets.forEach((turret) => {
+      const inRange = turret.trackTarget(this.enemy);
+      if (inRange && turret.canFire(time)) {
+        turret.markFired(time);
+        const tip = turret.getBarrelTip();
+        const angle = Phaser.Math.Angle.Between(tip.x, tip.y, this.enemy.x, this.enemy.y);
+        this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
+      }
+    });
+
+    this.bullets = this.bullets.filter((bullet) => {
+      bullet.update(delta);
+      if (bullet.expired) {
+        bullet.destroy();
+        return false;
+      }
+      return true;
+    });
   }
 
   drawPath() {

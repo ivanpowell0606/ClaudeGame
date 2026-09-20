@@ -1,13 +1,17 @@
 // Turret with a rotating gun (head + barrel) on a static base.
-// Tracking only for now — no shooting.
+// Tracks and fires at the enemy while it's within range.
 
 export const TURRET_RADIUS = 22;
 export const TURRET_RANGE = 160;
+export const FIRE_RATE = 500; // ms between shots
+const BARREL_TIP_OFFSET = 31;
 
 export default class Turret extends Phaser.GameObjects.Container {
   constructor(scene, x, y) {
     super(scene, x, y);
     scene.add.existing(this);
+
+    this.lastFiredAt = -Infinity;
 
     const rangeCircle = scene.add
       .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
@@ -23,10 +27,28 @@ export default class Turret extends Phaser.GameObjects.Container {
     this.add([rangeCircle, base, this.gun]);
   }
 
+  // Rotates toward the target if it's in range. Returns whether it's in range.
   trackTarget(target) {
     const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
-    if (distance > TURRET_RANGE) return;
+    const inRange = distance <= TURRET_RANGE;
 
-    this.gun.rotation = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+    if (inRange) {
+      this.gun.rotation = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+    }
+
+    return inRange;
+  }
+
+  canFire(time) {
+    return time - this.lastFiredAt >= FIRE_RATE;
+  }
+
+  markFired(time) {
+    this.lastFiredAt = time;
+  }
+
+  getBarrelTip() {
+    const tip = new Phaser.Math.Vector2(BARREL_TIP_OFFSET, 0).rotate(this.gun.rotation);
+    return { x: this.x + tip.x, y: this.y + tip.y };
   }
 }
