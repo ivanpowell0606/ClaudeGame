@@ -301,15 +301,28 @@ export default class GameScene extends Phaser.Scene {
   drawPath() {
     const graphics = this.add.graphics();
 
+    this.drawPathShadow(graphics);
+
     // Mortar edge, peeking out from behind the brick surface.
     graphics.lineStyle(PATH_WIDTH + 4, 0x3a2e28, 1);
     this.strokePathLine(graphics);
 
-    // Brick road surface.
-    graphics.lineStyle(PATH_WIDTH, 0x8f5a3c, 1);
+    // Warm rim catching the light at the road's edges — also shows through
+    // the gaps between individual bricks below.
+    graphics.lineStyle(PATH_WIDTH + 1, 0xc98f68, 0.35);
     this.strokePathLine(graphics);
 
-    this.drawBrickJoints(graphics);
+    this.drawBrickSurface(graphics);
+  }
+
+  drawPathShadow(graphics) {
+    graphics.lineStyle(PATH_WIDTH + 6, 0x000000, 0.3);
+    graphics.beginPath();
+    graphics.moveTo(this.pathPoints[0].x + 4, this.pathPoints[0].y + 5);
+    for (let i = 1; i < this.pathPoints.length; i++) {
+      graphics.lineTo(this.pathPoints[i].x + 4, this.pathPoints[i].y + 5);
+    }
+    graphics.strokePath();
   }
 
   strokePathLine(graphics) {
@@ -321,13 +334,15 @@ export default class GameScene extends Phaser.Scene {
     graphics.strokePath();
   }
 
-  // Perpendicular mortar joints plus a lengthwise seam, to read as two rows
-  // of bricks running along the road instead of a flat stripe.
-  drawBrickJoints(graphics) {
+  // Individual brick fills (alternating tones) with small mortar gaps
+  // between them, plus a lengthwise seam suggesting two rows of bricks.
+  drawBrickSurface(graphics) {
     const BRICK_LENGTH = 26;
-    const halfWidth = PATH_WIDTH / 2;
+    const BRICK_GAP = 2;
+    const brickHalfWidth = PATH_WIDTH / 2 - 1;
+    const shades = [0x9c5f3f, 0x8a5136, 0x976049];
+    let brickIndex = 0;
 
-    graphics.lineStyle(2, 0x5c3d2e, 0.55);
     for (let i = 0; i < this.pathPoints.length - 1; i++) {
       const a = this.pathPoints[i];
       const b = this.pathPoints[i + 1];
@@ -336,17 +351,32 @@ export default class GameScene extends Phaser.Scene {
       const length = Math.hypot(dx, dy);
       const dirX = dx / length;
       const dirY = dy / length;
-      const perpX = -dirY * halfWidth;
-      const perpY = dirX * halfWidth;
+      const perpX = -dirY * brickHalfWidth;
+      const perpY = dirX * brickHalfWidth;
 
-      for (let t = BRICK_LENGTH; t < length; t += BRICK_LENGTH) {
-        const px = a.x + dirX * t;
-        const py = a.y + dirY * t;
-        graphics.lineBetween(px - perpX, py - perpY, px + perpX, py + perpY);
+      for (let t = 0; t < length; t += BRICK_LENGTH) {
+        const segStart = t;
+        const segEnd = Math.min(t + BRICK_LENGTH - BRICK_GAP, length);
+        const startX = a.x + dirX * segStart;
+        const startY = a.y + dirY * segStart;
+        const endX = a.x + dirX * segEnd;
+        const endY = a.y + dirY * segEnd;
+
+        graphics.fillStyle(shades[brickIndex % shades.length], 1);
+        graphics.fillPoints(
+          [
+            { x: startX + perpX, y: startY + perpY },
+            { x: endX + perpX, y: endY + perpY },
+            { x: endX - perpX, y: endY - perpY },
+            { x: startX - perpX, y: startY - perpY },
+          ],
+          true
+        );
+        brickIndex++;
       }
     }
 
-    graphics.lineStyle(1, 0x5c3d2e, 0.4);
+    graphics.lineStyle(1, 0x5c3d2e, 0.35);
     this.strokePathLine(graphics);
   }
 
