@@ -21,6 +21,8 @@ export default class GameScene extends Phaser.Scene {
     this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
     this.turrets = [];
     this.bullets = [];
+    this.enemy = null;
+    this.waveActive = false;
     this.dragPreview = null;
     this.dragValid = false;
     this.dragPoint = null;
@@ -94,7 +96,17 @@ export default class GameScene extends Phaser.Scene {
       this.nudgeActive = false;
       this.lastNudgePoint = null;
     });
+  }
 
+  // --- Wave control, driven by the Start Wave button ---
+
+  isWaveActive() {
+    return this.waveActive;
+  }
+
+  startWave() {
+    if (this.waveActive) return;
+    this.waveActive = true;
     // Test wave: a single enemy walking the path.
     this.enemy = new Enemy(this, this.pathPoints);
   }
@@ -170,6 +182,14 @@ export default class GameScene extends Phaser.Scene {
     if (this.enemy) {
       this.enemy.update(delta);
 
+      if (this.enemy.reachedEnd) {
+        this.enemy.destroy();
+        this.enemy = null;
+        this.waveActive = false;
+      }
+    }
+
+    if (this.enemy) {
       this.turrets.forEach((turret) => {
         if (!turret.isValid) return;
 
@@ -195,6 +215,7 @@ export default class GameScene extends Phaser.Scene {
           if (killed) {
             this.enemy.destroy();
             this.enemy = null;
+            this.waveActive = false;
           }
           return false;
         }

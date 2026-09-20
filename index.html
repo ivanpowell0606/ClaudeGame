@@ -63,12 +63,35 @@
     .tower-button:active {
       cursor: grabbing;
     }
+    #start-wave-button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background: #2f6b3a;
+      border: 1px solid #3f8a4d;
+      border-radius: 4px;
+      color: #eafbea;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #start-wave-button:hover:not(:disabled) {
+      background: #37803f;
+    }
+    #start-wave-button:disabled {
+      background: #2c2f36;
+      border-color: #444;
+      color: #777;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="game-container"></div>
     <div id="ui-panel">
+      <button id="start-wave-button">Start Wave</button>
       <h2>Towers</h2>
       <button id="turret-button" class="tower-button">Turret</button>
     </div>

@@ -28,4 +28,15 @@ export function initMenu() {
       document.addEventListener('pointerup', handleUp);
     });
   });
+
+  const startButton = document.getElementById('start-wave-button');
+  startButton.addEventListener('click', () => {
+    getGameScene()?.startWave();
+  });
+
+  setInterval(() => {
+    const scene = getGameScene();
+    if (!scene) return;
+    startButton.disabled = scene.isWaveActive();
+  }, 200);
 }
