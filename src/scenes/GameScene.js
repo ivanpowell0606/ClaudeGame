@@ -225,17 +225,20 @@ export default class GameScene extends Phaser.Scene {
     this.dragPoint = null;
   }
 
+  // The canvas is scaled (and, under ENVELOP, cropped) to cover its
+  // container while keeping aspect ratio, so raw canvas-rect math no
+  // longer maps correctly — the visible/interactive area is the
+  // container's bounds, and Phaser's own Scale Manager knows how to
+  // translate a page point into game-world coordinates for it.
   canvasPointFromClient(clientX, clientY) {
-    const rect = this.game.canvas.getBoundingClientRect();
+    const rect = this.game.canvas.parentElement.getBoundingClientRect();
     if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
       return null;
     }
 
-    const scaleX = this.game.canvas.width / rect.width;
-    const scaleY = this.game.canvas.height / rect.height;
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: this.scale.transformX(clientX),
+      y: this.scale.transformY(clientY),
     };
   }
 

@@ -8,10 +8,14 @@ initUpgradeMenu();
 
 const config = {
   type: Phaser.AUTO,
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
   backgroundColor: '#1e1e1e',
   parent: 'game-container',
+  scale: {
+    mode: Phaser.Scale.ENVELOP,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
+  },
   scene: [GameScene],
 };
 
