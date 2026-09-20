@@ -27,9 +27,12 @@ export default class Turret extends Phaser.GameObjects.Container {
     // turret never charges again.
     this.paid = false;
 
+    // Hidden by default — only shown while being placed/repositioned, or
+    // while its upgrade menu is open (see GameScene and upgradeMenu.js).
     this.rangeCircle = scene.add
       .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
-      .setStrokeStyle(2, 0x8892a6, 0.4);
+      .setStrokeStyle(2, 0x8892a6, 0.4)
+      .setVisible(false);
 
     // Ground shadow for a bit of lift off the field.
     const shadow = scene.add.ellipse(6, 10, TURRET_RADIUS * 2.1, TURRET_RADIUS * 1.3, 0x000000, 0.35);
@@ -67,6 +70,14 @@ export default class Turret extends Phaser.GameObjects.Container {
 
     this.setInteractive(new Phaser.Geom.Circle(0, 0, TURRET_RADIUS), Phaser.Geom.Circle.Contains);
     scene.input.setDraggable(this);
+  }
+
+  showRange() {
+    this.rangeCircle.setVisible(true);
+  }
+
+  hideRange() {
+    this.rangeCircle.setVisible(false);
   }
 
   // Tints the turret red (invalid) or its normal colors (valid). Used while

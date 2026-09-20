@@ -56,6 +56,7 @@ export default class GameScene extends Phaser.Scene {
       if (index === -1) return;
       this.turrets.splice(index, 1);
       gameObject.alpha = 0.6;
+      gameObject.showRange();
       this.dragPreview = gameObject;
       this.applyDragPreviewAt(pointer.x, pointer.y);
     });
@@ -101,6 +102,7 @@ export default class GameScene extends Phaser.Scene {
       this.turrets.forEach((turret) => {
         if (turret.isValid) return;
         turret.setPosition(turret.x + dx, turret.y + dy);
+        turret.showRange();
         // Tint-only preview while dragging — doesn't activate the turret
         // until the pointer is released.
         const wouldBeValid = this.isSpotValid(turret.x, turret.y, turret) && this.canAfford(turret);
@@ -129,6 +131,7 @@ export default class GameScene extends Phaser.Scene {
           const finalValid = this.isSpotValid(turret.x, turret.y, turret) && this.canAfford(turret);
           turret.finalizePlacement(finalValid);
           this.chargeIfNeeded(turret);
+          turret.hideRange();
         });
       }
       this.nudgeActive = false;
@@ -202,6 +205,7 @@ export default class GameScene extends Phaser.Scene {
   startDragPreview() {
     this.dragPreview = new Turret(this, -1000, -1000);
     this.dragPreview.alpha = 0.6;
+    this.dragPreview.showRange();
     this.dragPreview.setVisible(false);
   }
 
@@ -236,6 +240,7 @@ export default class GameScene extends Phaser.Scene {
       turret.alpha = 1;
       turret.finalizePlacement(this.dragValid);
       this.chargeIfNeeded(turret);
+      turret.hideRange();
       this.turrets.push(turret);
       this.dragPreview = null;
     }

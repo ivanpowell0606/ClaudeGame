@@ -21,7 +21,11 @@ export function initUpgradeMenu() {
 // it sits in the left half, the menu opens on the right side of the
 // screen (and vice versa) so it doesn't cover the turret itself.
 export function openUpgradeMenu(turret, canvasWidth) {
+  if (currentTurret && currentTurret !== turret) {
+    currentTurret.hideRange();
+  }
   currentTurret = turret;
+  turret.showRange();
 
   const side = turret.x < canvasWidth / 2 ? 'right' : 'left';
   panel.classList.remove('side-left', 'side-right');
@@ -34,6 +38,9 @@ export function openUpgradeMenu(turret, canvasWidth) {
 }
 
 export function closeUpgradeMenu() {
+  if (currentTurret) {
+    currentTurret.hideRange();
+  }
   currentTurret = null;
   panel.classList.remove('open');
   backdrop.classList.remove('open');
