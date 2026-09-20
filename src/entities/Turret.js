@@ -2,11 +2,16 @@
 // Tracking only for now — no shooting.
 
 export const TURRET_RADIUS = 22;
+export const TURRET_RANGE = 160;
 
 export default class Turret extends Phaser.GameObjects.Container {
   constructor(scene, x, y) {
     super(scene, x, y);
     scene.add.existing(this);
+
+    const rangeCircle = scene.add
+      .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
+      .setStrokeStyle(1, 0x8892a6, 0.4);
 
     const base = scene.add.circle(0, 0, TURRET_RADIUS, 0x555b66).setStrokeStyle(3, 0x2c2f36);
 
@@ -15,10 +20,13 @@ export default class Turret extends Phaser.GameObjects.Container {
 
     this.gun = scene.add.container(0, 0, [barrel, turretHead]);
 
-    this.add([base, this.gun]);
+    this.add([rangeCircle, base, this.gun]);
   }
 
   trackTarget(target) {
+    const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
+    if (distance > TURRET_RANGE) return;
+
     this.gun.rotation = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
   }
 }
