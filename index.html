@@ -13,20 +13,21 @@
     #app {
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: stretch;
       height: 100%;
-      gap: 16px;
+    }
+    #game-container {
+      display: flex;
+      align-items: center;
     }
     canvas {
       display: block;
     }
     #ui-panel {
-      width: 160px;
-      align-self: center;
+      width: 200px;
       background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 12px;
+      border-left: 1px solid #333;
+      padding: 16px;
       font-family: sans-serif;
       color: #ccc;
       box-sizing: border-box;
