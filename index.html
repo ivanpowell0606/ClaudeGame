@@ -8,17 +8,65 @@
       margin: 0;
       padding: 0;
       background: #111;
+      height: 100%;
+    }
+    #app {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100%;
+      gap: 16px;
     }
     canvas {
       display: block;
     }
+    #ui-panel {
+      width: 160px;
+      align-self: center;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: sans-serif;
+      color: #ccc;
+      box-sizing: border-box;
+    }
+    #ui-panel h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+    }
+    .tower-button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #2c2f36;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .tower-button:hover {
+      background: #383c45;
+    }
+    .tower-button.selected {
+      border-color: #8892a6;
+      background: #454b58;
+    }
   </style>
 </head>
 <body>
+  <div id="app">
+    <div id="game-container"></div>
+    <div id="ui-panel">
+      <h2>Towers</h2>
+      <button id="turret-button" class="tower-button">Turret</button>
+    </div>
+  </div>
   <script src="vendor/phaser.min.js"></script>
   <script type="module" src="src/main.js"></script>
 </body>

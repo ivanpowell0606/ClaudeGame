@@ -7,6 +7,7 @@ import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
 import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
+import { getSelectedTower } from '../ui/selection.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 
@@ -22,6 +23,7 @@ export default class GameScene extends Phaser.Scene {
     this.drawPath();
 
     this.input.on('pointerdown', (pointer) => {
+      if (getSelectedTower() !== 'turret') return;
       if (this.isOnPath(pointer.x, pointer.y)) return;
       if (this.overlapsTurret(pointer.x, pointer.y)) return;
       this.turrets.push(new Turret(this, pointer.x, pointer.y));
