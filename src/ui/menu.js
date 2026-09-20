@@ -1,10 +1,12 @@
 import { getGameScene } from './gameSceneRef.js';
+import { TURRET_COST } from '../config/economy.js';
 
-const DRAGGABLE_TOWERS = [{ id: 'turret-button', type: 'turret' }];
+const DRAGGABLE_TOWERS = [{ id: 'turret-button', type: 'turret', cost: TURRET_COST }];
 
 export function initMenu() {
-  DRAGGABLE_TOWERS.forEach(({ id, type }) => {
+  DRAGGABLE_TOWERS.forEach(({ id, type, cost }) => {
     const button = document.getElementById(id);
+    button.textContent = `Turret ($${cost})`;
 
     button.addEventListener('pointerdown', (event) => {
       event.preventDefault();

@@ -68,6 +68,20 @@
     .tower-button:active {
       cursor: grabbing;
     }
+    #cash-display {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      background: #23301f;
+      border: 1px solid #3f5a38;
+      border-radius: 4px;
+      color: #a9e08f;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      box-sizing: border-box;
+    }
     #start-wave-button {
       display: block;
       width: 100%;
@@ -172,6 +186,7 @@
   <div id="app">
     <div id="game-container"></div>
     <div id="ui-panel">
+      <div id="cash-display">$1000</div>
       <button id="start-wave-button">Start Wave 1</button>
       <h2>Towers</h2>
       <button id="turret-button" class="tower-button">Turret</button>

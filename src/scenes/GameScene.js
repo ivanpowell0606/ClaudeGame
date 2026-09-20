@@ -5,6 +5,7 @@ import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
 import { openUpgradeMenu } from '../ui/upgradeMenu.js';
+import { STARTING_CASH, TURRET_COST, ENEMY_REWARD } from '../config/economy.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
@@ -27,6 +28,8 @@ export default class GameScene extends Phaser.Scene {
     this.turrets = [];
     this.bullets = [];
     this.enemies = [];
+    this.cash = STARTING_CASH;
+    this.updateCashDisplay();
     this.waveActive = false;
     this.enemiesSpawned = 0;
     this.spawnTimer = 0;
@@ -100,7 +103,7 @@ export default class GameScene extends Phaser.Scene {
         turret.setPosition(turret.x + dx, turret.y + dy);
         // Tint-only preview while dragging — doesn't activate the turret
         // until the pointer is released.
-        const wouldBeValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
+        const wouldBeValid = this.isSpotValid(turret.x, turret.y, turret) && this.canAfford(turret);
         turret.setValid(wouldBeValid);
       });
     });
@@ -123,13 +126,34 @@ export default class GameScene extends Phaser.Scene {
       if (this.nudgeActive) {
         this.turrets.forEach((turret) => {
           if (turret.isValid) return;
-          const finalValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
+          const finalValid = this.isSpotValid(turret.x, turret.y, turret) && this.canAfford(turret);
           turret.finalizePlacement(finalValid);
+          this.chargeIfNeeded(turret);
         });
       }
       this.nudgeActive = false;
       this.lastNudgePoint = null;
     });
+  }
+
+  // --- Cash economy ---
+
+  updateCashDisplay() {
+    document.getElementById('cash-display').textContent = `$${this.cash}`;
+  }
+
+  // Already-paid turrets can always afford to move; a fresh one needs
+  // enough cash on hand.
+  canAfford(turret) {
+    return turret.paid || this.cash >= TURRET_COST;
+  }
+
+  chargeIfNeeded(turret) {
+    if (turret.isValid && !turret.paid) {
+      this.cash -= TURRET_COST;
+      turret.paid = true;
+      this.updateCashDisplay();
+    }
   }
 
   // --- Wave control, driven by the Start Wave button ---
@@ -196,7 +220,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   applyDragPreviewAt(x, y) {
-    this.dragValid = !this.isOnPath(x, y) && !this.overlapsTurret(x, y, this.dragPreview);
+    this.dragValid = this.isSpotValid(x, y, this.dragPreview) && this.canAfford(this.dragPreview);
     this.dragPoint = { x, y };
     this.dragPreview.setVisible(true);
     this.dragPreview.setPosition(x, y);
@@ -211,6 +235,7 @@ export default class GameScene extends Phaser.Scene {
       const turret = this.dragPreview;
       turret.alpha = 1;
       turret.finalizePlacement(this.dragValid);
+      this.chargeIfNeeded(turret);
       this.turrets.push(turret);
       this.dragPreview = null;
     }
@@ -283,6 +308,8 @@ export default class GameScene extends Phaser.Scene {
         if (killed) {
           hitEnemy.destroy();
           this.enemies = this.enemies.filter((enemy) => enemy !== hitEnemy);
+          this.cash += ENEMY_REWARD;
+          this.updateCashDisplay();
         }
         return false;
       }
@@ -420,6 +447,10 @@ export default class GameScene extends Phaser.Scene {
         graphics.fillCircle(px, py, rng.between(2, 4));
       }
     }
+  }
+
+  isSpotValid(x, y, exclude = null) {
+    return !this.isOnPath(x, y) && !this.overlapsTurret(x, y, exclude);
   }
 
   isOnPath(x, y) {

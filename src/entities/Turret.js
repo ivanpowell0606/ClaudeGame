@@ -22,6 +22,10 @@ export default class Turret extends Phaser.GameObjects.Container {
     this.lastFiredAt = -Infinity;
     this.aimPoint = null;
     this.isValid = true;
+    // Cash is only deducted the first time this turret successfully locks
+    // into a valid spot, so re-grabbing and repositioning an already-paid
+    // turret never charges again.
+    this.paid = false;
 
     this.rangeCircle = scene.add
       .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
