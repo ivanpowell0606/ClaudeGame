@@ -334,14 +334,34 @@ export default class GameScene extends Phaser.Scene {
     graphics.strokePath();
   }
 
-  // Individual brick fills (alternating tones) with small mortar gaps
-  // between them, plus a lengthwise seam suggesting two rows of bricks.
+  // Individual brick fills (varied tones, each with a light/dark bevel edge
+  // for an embossed look) with small mortar gaps between them, keystone
+  // patches smoothing the corners, light grit speckle, and a lengthwise
+  // seam suggesting two rows of bricks.
   drawBrickSurface(graphics) {
     const BRICK_LENGTH = 52;
     const BRICK_GAP = 4;
     const brickHalfWidth = PATH_WIDTH / 2 - 2;
-    const shades = [0x9c5f3f, 0x8a5136, 0x976049];
+    const shades = [0x9c5f3f, 0x8a5136, 0x976049, 0xa66a45, 0x8f5940];
     let brickIndex = 0;
+
+    const drawBrick = (startX, startY, endX, endY, perpX, perpY) => {
+      const p1 = { x: startX + perpX, y: startY + perpY };
+      const p2 = { x: endX + perpX, y: endY + perpY };
+      const p3 = { x: endX - perpX, y: endY - perpY };
+      const p4 = { x: startX - perpX, y: startY - perpY };
+
+      graphics.fillStyle(shades[brickIndex % shades.length], 1);
+      graphics.fillPoints([p1, p2, p3, p4], true);
+      brickIndex++;
+
+      // Embossed bevel: a lit edge on one long side, a shaded edge on the
+      // other, so each brick reads as slightly raised.
+      graphics.lineStyle(2, 0xffffff, 0.12);
+      graphics.lineBetween(p1.x, p1.y, p2.x, p2.y);
+      graphics.lineStyle(2, 0x000000, 0.18);
+      graphics.lineBetween(p3.x, p3.y, p4.x, p4.y);
+    };
 
     for (let i = 0; i < this.pathPoints.length - 1; i++) {
       const a = this.pathPoints[i];
@@ -357,27 +377,48 @@ export default class GameScene extends Phaser.Scene {
       for (let t = 0; t < length; t += BRICK_LENGTH) {
         const segStart = t;
         const segEnd = Math.min(t + BRICK_LENGTH - BRICK_GAP, length);
-        const startX = a.x + dirX * segStart;
-        const startY = a.y + dirY * segStart;
-        const endX = a.x + dirX * segEnd;
-        const endY = a.y + dirY * segEnd;
-
-        graphics.fillStyle(shades[brickIndex % shades.length], 1);
-        graphics.fillPoints(
-          [
-            { x: startX + perpX, y: startY + perpY },
-            { x: endX + perpX, y: endY + perpY },
-            { x: endX - perpX, y: endY - perpY },
-            { x: startX - perpX, y: startY - perpY },
-          ],
-          true
+        drawBrick(
+          a.x + dirX * segStart,
+          a.y + dirY * segStart,
+          a.x + dirX * segEnd,
+          a.y + dirY * segEnd,
+          perpX,
+          perpY
         );
-        brickIndex++;
       }
     }
 
+    this.drawPathSpeckle(graphics);
+
     graphics.lineStyle(2, 0x5c3d2e, 0.35);
     this.strokePathLine(graphics);
+  }
+
+  // Scattered dark specks for a bit of worn grit/texture on the road.
+  drawPathSpeckle(graphics) {
+    const rng = new Phaser.Math.RandomDataGenerator(['brick-speckle']);
+
+    for (let i = 0; i < this.pathPoints.length - 1; i++) {
+      const a = this.pathPoints[i];
+      const b = this.pathPoints[i + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      const dirX = dx / length;
+      const dirY = dy / length;
+      const perpX = -dirY;
+      const perpY = dirX;
+      const speckleCount = Math.floor(length / 30);
+
+      for (let s = 0; s < speckleCount; s++) {
+        const t = rng.between(0, length);
+        const offset = rng.realInRange(-(PATH_WIDTH / 2 - 6), PATH_WIDTH / 2 - 6);
+        const px = a.x + dirX * t + perpX * offset;
+        const py = a.y + dirY * t + perpY * offset;
+        graphics.fillStyle(0x000000, 0.08);
+        graphics.fillCircle(px, py, rng.between(2, 4));
+      }
+    }
   }
 
   isOnPath(x, y) {
