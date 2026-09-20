@@ -10,6 +10,7 @@ import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
+const NUDGE_FACTOR = 0.25;
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -23,9 +24,67 @@ export default class GameScene extends Phaser.Scene {
     this.dragPreview = null;
     this.dragValid = false;
     this.dragPoint = null;
+    this.nudgeActive = false;
+    this.lastNudgePoint = null;
     this.drawPath();
 
     setGameScene(this);
+
+    // Re-grabbing an already-placed turret (valid or stuck in an invalid
+    // spot) reuses the same preview mechanic as a fresh menu drag.
+    this.input.on('dragstart', (pointer, gameObject) => {
+      if (!(gameObject instanceof Turret)) return;
+      const index = this.turrets.indexOf(gameObject);
+      if (index === -1) return;
+      this.turrets.splice(index, 1);
+      gameObject.alpha = 0.6;
+      this.dragPreview = gameObject;
+      this.applyDragPreviewAt(pointer.x, pointer.y);
+    });
+
+    this.input.on('drag', (pointer, gameObject) => {
+      if (this.dragPreview !== gameObject) return;
+      this.applyDragPreviewAt(pointer.x, pointer.y);
+    });
+
+    this.input.on('dragend', (pointer, gameObject) => {
+      if (this.dragPreview !== gameObject) return;
+      this.confirmDrop();
+    });
+
+    // Dragging on empty canvas nudges any turret currently stuck in an
+    // invalid spot, in case it's awkward to grab directly.
+    this.input.on('pointerdown', (pointer) => {
+      if (this.dragPreview) return;
+      const overTurret = this.turrets.some(
+        (turret) => Phaser.Math.Distance.Between(pointer.x, pointer.y, turret.x, turret.y) <= TURRET_RADIUS
+      );
+      if (overTurret) return;
+      if (!this.turrets.some((turret) => !turret.isValid)) return;
+
+      this.nudgeActive = true;
+      this.lastNudgePoint = { x: pointer.x, y: pointer.y };
+    });
+
+    this.input.on('pointermove', (pointer) => {
+      if (!this.nudgeActive) return;
+
+      const dx = (pointer.x - this.lastNudgePoint.x) * NUDGE_FACTOR;
+      const dy = (pointer.y - this.lastNudgePoint.y) * NUDGE_FACTOR;
+      this.lastNudgePoint = { x: pointer.x, y: pointer.y };
+
+      this.turrets.forEach((turret) => {
+        if (turret.isValid) return;
+        turret.setPosition(turret.x + dx, turret.y + dy);
+        turret.isValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
+        turret.setValid(turret.isValid);
+      });
+    });
+
+    this.input.on('pointerup', () => {
+      this.nudgeActive = false;
+      this.lastNudgePoint = null;
+    });
 
     // Test wave: a single enemy walking the path.
     this.enemy = new Enemy(this, this.pathPoints);
@@ -50,16 +109,28 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.dragValid = !this.isOnPath(point.x, point.y) && !this.overlapsTurret(point.x, point.y);
-    this.dragPoint = point;
+    this.applyDragPreviewAt(point.x, point.y);
+  }
+
+  applyDragPreviewAt(x, y) {
+    this.dragValid = !this.isOnPath(x, y) && !this.overlapsTurret(x, y, this.dragPreview);
+    this.dragPoint = { x, y };
     this.dragPreview.setVisible(true);
-    this.dragPreview.setPosition(point.x, point.y);
+    this.dragPreview.setPosition(x, y);
     this.dragPreview.setValid(this.dragValid);
   }
 
+  // Places the dragged turret wherever it's released, valid or not — an
+  // invalid drop leaves it there (tinted red) instead of vanishing, so it
+  // can be picked back up and repositioned.
   confirmDrop() {
-    if (this.dragValid && this.dragPoint) {
-      this.turrets.push(new Turret(this, this.dragPoint.x, this.dragPoint.y));
+    if (this.dragPreview && this.dragPoint) {
+      const turret = this.dragPreview;
+      turret.alpha = 1;
+      turret.isValid = this.dragValid;
+      turret.setValid(this.dragValid);
+      this.turrets.push(turret);
+      this.dragPreview = null;
     }
     this.cancelDrag();
   }
@@ -92,6 +163,8 @@ export default class GameScene extends Phaser.Scene {
       this.enemy.update(delta);
 
       this.turrets.forEach((turret) => {
+        if (!turret.isValid) return;
+
         const inRange = turret.trackTarget(this.enemy, this.enemy.getVelocity());
         if (inRange && turret.canFire(time)) {
           turret.markFired(time);
@@ -152,10 +225,11 @@ export default class GameScene extends Phaser.Scene {
     return false;
   }
 
-  overlapsTurret(x, y) {
+  overlapsTurret(x, y, exclude = null) {
     const threshold = TURRET_RADIUS * 2;
     return this.turrets.some(
-      (turret) => Phaser.Math.Distance.Between(x, y, turret.x, turret.y) < threshold
+      (turret) =>
+        turret !== exclude && Phaser.Math.Distance.Between(x, y, turret.x, turret.y) < threshold
     );
   }
 }

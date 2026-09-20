@@ -17,6 +17,7 @@ export default class Turret extends Phaser.GameObjects.Container {
 
     this.lastFiredAt = -Infinity;
     this.aimPoint = null;
+    this.isValid = true;
 
     this.rangeCircle = scene.add
       .circle(0, 0, TURRET_RANGE, 0x8892a6, 0)
@@ -30,6 +31,9 @@ export default class Turret extends Phaser.GameObjects.Container {
     this.gun = scene.add.container(0, 0, [this.barrel, this.turretHead]);
 
     this.add([this.rangeCircle, this.base, this.gun]);
+
+    this.setInteractive(new Phaser.Geom.Circle(0, 0, TURRET_RADIUS), Phaser.Geom.Circle.Contains);
+    scene.input.setDraggable(this);
   }
 
   // Tints the turret red (invalid) or its normal colors (valid). Used while
