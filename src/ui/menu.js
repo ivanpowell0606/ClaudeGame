@@ -39,6 +39,6 @@ export function initMenu() {
   setInterval(() => {
     const scene = getGameScene();
     if (!scene) return;
-    startButton.disabled = scene.isWaveActive();
+    startButton.disabled = scene.isWaveActive() || !scene.hasMoreWaves();
   }, 200);
 }

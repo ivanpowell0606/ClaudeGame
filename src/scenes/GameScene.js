@@ -22,7 +22,6 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     document.getElementById('ui-panel').style.visibility = 'visible';
-    document.getElementById('start-wave-button').textContent = `Start ${this.area.wave.name}`;
 
     this.pathPoints = this.area.pathTiles.map(tileToWorld);
     this.turrets = [];
@@ -30,9 +29,12 @@ export default class GameScene extends Phaser.Scene {
     this.enemies = [];
     this.cash = STARTING_CASH;
     this.updateCashDisplay();
+    this.waveIndex = 0;
+    this.currentWave = null;
     this.waveActive = false;
     this.enemiesSpawned = 0;
     this.spawnTimer = 0;
+    this.updateWaveButtonLabel();
     this.dragPreview = null;
     this.dragValid = false;
     this.dragPoint = null;
@@ -165,8 +167,22 @@ export default class GameScene extends Phaser.Scene {
     return this.waveActive;
   }
 
+  hasMoreWaves() {
+    return this.waveIndex < this.area.waves.length;
+  }
+
+  updateWaveButtonLabel() {
+    const button = document.getElementById('start-wave-button');
+    if (this.hasMoreWaves()) {
+      button.textContent = `Start ${this.area.waves[this.waveIndex].name}`;
+    } else {
+      button.textContent = 'All Waves Cleared';
+    }
+  }
+
   startWave() {
-    if (this.waveActive) return;
+    if (this.waveActive || !this.hasMoreWaves()) return;
+    this.currentWave = this.area.waves[this.waveIndex];
     this.waveActive = true;
     this.enemiesSpawned = 0;
     this.spawnTimer = 0;
@@ -174,11 +190,11 @@ export default class GameScene extends Phaser.Scene {
 
   updateSpawning(delta) {
     if (!this.waveActive) return;
-    if (this.enemiesSpawned >= this.area.wave.enemyCount) return;
+    if (this.enemiesSpawned >= this.currentWave.enemyCount) return;
 
     this.spawnTimer += delta;
-    if (this.spawnTimer >= this.area.wave.spawnIntervalMs) {
-      this.spawnTimer -= this.area.wave.spawnIntervalMs;
+    if (this.spawnTimer >= this.currentWave.spawnIntervalMs) {
+      this.spawnTimer -= this.currentWave.spawnIntervalMs;
       this.enemies.push(new Enemy(this, this.pathPoints));
       this.enemiesSpawned++;
     }
@@ -326,8 +342,10 @@ export default class GameScene extends Phaser.Scene {
       return true;
     });
 
-    if (this.waveActive && this.enemiesSpawned >= this.area.wave.enemyCount && this.enemies.length === 0) {
+    if (this.waveActive && this.enemiesSpawned >= this.currentWave.enemyCount && this.enemies.length === 0) {
       this.waveActive = false;
+      this.waveIndex++;
+      this.updateWaveButtonLabel();
     }
   }
 
