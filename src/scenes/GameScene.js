@@ -4,9 +4,11 @@ import {
   tileToWorld,
 } from '../config/grid.js';
 import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
-import Enemy from '../entities/Enemy.js';
-import Bullet from '../entities/Bullet.js';
+import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
+import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
+
+const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -30,23 +32,37 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (!this.enemy) return;
+    if (this.enemy) {
+      this.enemy.update(delta);
 
-    this.enemy.update(delta);
-
-    this.turrets.forEach((turret) => {
-      const inRange = turret.trackTarget(this.enemy, this.enemy.getVelocity());
-      if (inRange && turret.canFire(time)) {
-        turret.markFired(time);
-        const tip = turret.getBarrelTip();
-        const aim = turret.aimPoint;
-        const angle = Phaser.Math.Angle.Between(tip.x, tip.y, aim.x, aim.y);
-        this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
-      }
-    });
+      this.turrets.forEach((turret) => {
+        const inRange = turret.trackTarget(this.enemy, this.enemy.getVelocity());
+        if (inRange && turret.canFire(time)) {
+          turret.markFired(time);
+          const tip = turret.getBarrelTip();
+          const aim = turret.aimPoint;
+          const angle = Phaser.Math.Angle.Between(tip.x, tip.y, aim.x, aim.y);
+          this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
+        }
+      });
+    }
 
     this.bullets = this.bullets.filter((bullet) => {
       bullet.update(delta);
+
+      if (this.enemy) {
+        const distance = Phaser.Math.Distance.Between(bullet.x, bullet.y, this.enemy.x, this.enemy.y);
+        if (distance <= HIT_DISTANCE) {
+          const killed = this.enemy.takeDamage(BULLET_DAMAGE);
+          bullet.destroy();
+          if (killed) {
+            this.enemy.destroy();
+            this.enemy = null;
+          }
+          return false;
+        }
+      }
+
       if (bullet.expired) {
         bullet.destroy();
         return false;

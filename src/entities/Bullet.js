@@ -1,8 +1,9 @@
-// Simple straight-line projectile. No collision/damage yet.
+// Simple straight-line projectile.
 
 export const BULLET_SPEED = 320; // pixels per second
 export const BULLET_RADIUS = 4;
 export const BULLET_LIFETIME = 1000; // ms before despawning
+export const BULLET_DAMAGE = 5;
 
 export default class Bullet extends Phaser.GameObjects.Container {
   constructor(scene, x, y, angle) {

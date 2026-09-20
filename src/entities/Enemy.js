@@ -2,6 +2,11 @@
 
 export const ENEMY_RADIUS = 12;
 export const ENEMY_SPEED = 80; // pixels per second
+export const ENEMY_MAX_HEALTH = 22;
+
+const HEALTH_BAR_WIDTH = 30;
+const HEALTH_BAR_HEIGHT = 5;
+const HEALTH_BAR_OFFSET_Y = -(ENEMY_RADIUS + 10);
 
 export default class Enemy extends Phaser.GameObjects.Container {
   constructor(scene, path) {
@@ -12,17 +17,38 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.path = path;
     this.targetIndex = 1;
     this.velocity = { x: 0, y: 0 };
+    this.health = ENEMY_MAX_HEALTH;
 
     const body = scene.add.circle(0, 0, ENEMY_RADIUS, 0xd1495b).setStrokeStyle(2, 0x7a1f2b);
-    this.add(body);
+
+    const barX = -HEALTH_BAR_WIDTH / 2;
+    const healthBarBg = scene.add
+      .rectangle(barX, HEALTH_BAR_OFFSET_Y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT, 0x2c2f36)
+      .setOrigin(0, 0.5);
+    this.healthBarFill = scene.add
+      .rectangle(barX, HEALTH_BAR_OFFSET_Y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT, 0x4caf50)
+      .setOrigin(0, 0.5);
+
+    this.add([body, healthBarBg, this.healthBarFill]);
   }
 
   get reachedEnd() {
     return this.targetIndex >= this.path.length;
   }
 
+  get isDead() {
+    return this.health <= 0;
+  }
+
   getVelocity() {
     return this.velocity;
+  }
+
+  // Applies damage and updates the health bar. Returns true if this killed it.
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+    this.healthBarFill.scaleX = this.health / ENEMY_MAX_HEALTH;
+    return this.isDead;
   }
 
   update(delta) {
