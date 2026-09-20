@@ -1,6 +1,7 @@
 import {
   ENEMY_PATH_TILES,
   PATH_WIDTH,
+  GAME_WIDTH,
   tileToWorld,
 } from '../config/grid.js';
 import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
@@ -8,10 +9,12 @@ import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
+import { openUpgradeMenu } from '../ui/upgradeMenu.js';
 import { WAVE_ONE } from '../config/waves.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
+const CLICK_MOVE_THRESHOLD = 6;
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -31,9 +34,15 @@ export default class GameScene extends Phaser.Scene {
     this.dragPoint = null;
     this.nudgeActive = false;
     this.lastNudgePoint = null;
+    this.pointerDownTurret = null;
+    this.pointerDownPos = null;
     this.drawPath();
 
     setGameScene(this);
+
+    // Require a small movement before Phaser treats a press-and-move on a
+    // turret as a drag, so a plain click (below) isn't swallowed as one.
+    this.input.dragDistanceThreshold = CLICK_MOVE_THRESHOLD;
 
     // Re-grabbing an already-placed turret (valid or stuck in an invalid
     // spot) reuses the same preview mechanic as a fresh menu drag.
@@ -61,10 +70,17 @@ export default class GameScene extends Phaser.Scene {
     // invalid spot, in case it's awkward to grab directly.
     this.input.on('pointerdown', (pointer) => {
       if (this.dragPreview) return;
-      const overTurret = this.turrets.some(
+      const overTurret = this.turrets.find(
         (turret) => Phaser.Math.Distance.Between(pointer.x, pointer.y, turret.x, turret.y) <= TURRET_RADIUS
       );
-      if (overTurret) return;
+      if (overTurret) {
+        // Might be the start of a click (open the upgrade menu) or a drag
+        // (handled by Phaser's own dragstart/drag/dragend above) — decided
+        // on release by how far the pointer actually moved.
+        this.pointerDownTurret = overTurret;
+        this.pointerDownPos = { x: pointer.x, y: pointer.y };
+        return;
+      }
       if (!this.turrets.some((turret) => !turret.isValid)) return;
 
       this.nudgeActive = true;
@@ -88,7 +104,21 @@ export default class GameScene extends Phaser.Scene {
       });
     });
 
-    this.input.on('pointerup', () => {
+    this.input.on('pointerup', (pointer) => {
+      if (this.pointerDownTurret) {
+        const moved = Phaser.Math.Distance.Between(
+          pointer.x,
+          pointer.y,
+          this.pointerDownPos.x,
+          this.pointerDownPos.y
+        );
+        if (moved < CLICK_MOVE_THRESHOLD && this.pointerDownTurret.isValid) {
+          openUpgradeMenu(this.pointerDownTurret, GAME_WIDTH);
+        }
+        this.pointerDownTurret = null;
+        this.pointerDownPos = null;
+      }
+
       if (this.nudgeActive) {
         this.turrets.forEach((turret) => {
           if (turret.isValid) return;

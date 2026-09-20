@@ -85,6 +85,82 @@
       color: #777;
       cursor: not-allowed;
     }
+
+    #upgrade-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #upgrade-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #upgrade-panel {
+      position: fixed;
+      top: 0;
+      height: 100%;
+      width: 75vw;
+      background: #1a1a1a;
+      box-sizing: border-box;
+      padding: 24px;
+      font-family: sans-serif;
+      color: #ccc;
+      z-index: 1001;
+      transition: transform 0.25s ease;
+      transform: translateX(-100%);
+      pointer-events: none;
+    }
+    #upgrade-panel.side-left {
+      left: 0;
+      border-right: 1px solid #333;
+      transform: translateX(-100%);
+    }
+    #upgrade-panel.side-right {
+      right: 0;
+      border-left: 1px solid #333;
+      transform: translateX(100%);
+    }
+    #upgrade-panel.open {
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    #upgrade-panel h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      color: #eee;
+    }
+    #upgrade-panel .upgrade-subtitle {
+      margin: 0 0 24px;
+      font-size: 13px;
+      color: #888;
+    }
+    #upgrade-close-button {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: #2c2f36;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 14px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    #upgrade-panel.side-left #upgrade-close-button {
+      right: 24px;
+      left: auto;
+    }
+    #upgrade-close-button:hover {
+      background: #383c45;
+    }
+    #upgrade-empty-state {
+      color: #777;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -96,6 +172,15 @@
       <button id="turret-button" class="tower-button">Turret</button>
     </div>
   </div>
+
+  <div id="upgrade-backdrop"></div>
+  <div id="upgrade-panel">
+    <button id="upgrade-close-button">Close</button>
+    <h2>Turret Upgrades</h2>
+    <p class="upgrade-subtitle" id="upgrade-subtitle"></p>
+    <p id="upgrade-empty-state">No upgrades available yet.</p>
+  </div>
+
   <script src="vendor/phaser.min.js"></script>
   <script type="module" src="src/main.js"></script>
 </body>
