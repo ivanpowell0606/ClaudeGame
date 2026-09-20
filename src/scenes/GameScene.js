@@ -1,16 +1,10 @@
-import {
-  ENEMY_PATH_TILES,
-  PATH_WIDTH,
-  GAME_WIDTH,
-  tileToWorld,
-} from '../config/grid.js';
+import { PATH_WIDTH, GAME_WIDTH, tileToWorld } from '../config/grid.js';
 import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
 import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
 import { openUpgradeMenu } from '../ui/upgradeMenu.js';
-import { WAVE_ONE } from '../config/waves.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
@@ -21,8 +15,15 @@ export default class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
+  init(data) {
+    this.area = data.area;
+  }
+
   create() {
-    this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
+    document.getElementById('ui-panel').style.display = 'block';
+    document.getElementById('start-wave-button').textContent = `Start ${this.area.wave.name}`;
+
+    this.pathPoints = this.area.pathTiles.map(tileToWorld);
     this.turrets = [];
     this.bullets = [];
     this.enemies = [];
@@ -146,11 +147,11 @@ export default class GameScene extends Phaser.Scene {
 
   updateSpawning(delta) {
     if (!this.waveActive) return;
-    if (this.enemiesSpawned >= WAVE_ONE.enemyCount) return;
+    if (this.enemiesSpawned >= this.area.wave.enemyCount) return;
 
     this.spawnTimer += delta;
-    if (this.spawnTimer >= WAVE_ONE.spawnIntervalMs) {
-      this.spawnTimer -= WAVE_ONE.spawnIntervalMs;
+    if (this.spawnTimer >= this.area.wave.spawnIntervalMs) {
+      this.spawnTimer -= this.area.wave.spawnIntervalMs;
       this.enemies.push(new Enemy(this, this.pathPoints));
       this.enemiesSpawned++;
     }
@@ -293,7 +294,7 @@ export default class GameScene extends Phaser.Scene {
       return true;
     });
 
-    if (this.waveActive && this.enemiesSpawned >= WAVE_ONE.enemyCount && this.enemies.length === 0) {
+    if (this.waveActive && this.enemiesSpawned >= this.area.wave.enemyCount && this.enemies.length === 0) {
       this.waveActive = false;
     }
   }

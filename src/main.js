@@ -1,4 +1,5 @@
 import { GAME_WIDTH, GAME_HEIGHT } from './config/grid.js';
+import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import { initMenu } from './ui/menu.js';
 import { initUpgradeMenu } from './ui/upgradeMenu.js';
@@ -19,7 +20,7 @@ const config = {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },
-  scene: [GameScene],
+  scene: [MenuScene, GameScene],
 };
 
 new Phaser.Game(config);
