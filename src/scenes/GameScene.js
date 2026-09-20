@@ -7,7 +7,7 @@ import Turret, { TURRET_RADIUS } from '../entities/Turret.js';
 import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
-import { getSelectedTower } from '../ui/selection.js';
+import { setGameScene } from '../ui/gameSceneRef.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 
@@ -20,17 +20,71 @@ export default class GameScene extends Phaser.Scene {
     this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
     this.turrets = [];
     this.bullets = [];
+    this.dragPreview = null;
+    this.dragValid = false;
+    this.dragPoint = null;
     this.drawPath();
 
-    this.input.on('pointerdown', (pointer) => {
-      if (getSelectedTower() !== 'turret') return;
-      if (this.isOnPath(pointer.x, pointer.y)) return;
-      if (this.overlapsTurret(pointer.x, pointer.y)) return;
-      this.turrets.push(new Turret(this, pointer.x, pointer.y));
-    });
+    setGameScene(this);
 
     // Test wave: a single enemy walking the path.
     this.enemy = new Enemy(this, this.pathPoints);
+  }
+
+  // --- Drag-and-drop placement, driven by the HTML tower menu ---
+
+  startDragPreview() {
+    this.dragPreview = new Turret(this, -1000, -1000);
+    this.dragPreview.alpha = 0.6;
+    this.dragPreview.setVisible(false);
+  }
+
+  updateDragPreview(clientX, clientY) {
+    if (!this.dragPreview) return;
+
+    const point = this.canvasPointFromClient(clientX, clientY);
+    if (!point) {
+      this.dragPreview.setVisible(false);
+      this.dragValid = false;
+      this.dragPoint = null;
+      return;
+    }
+
+    this.dragValid = !this.isOnPath(point.x, point.y) && !this.overlapsTurret(point.x, point.y);
+    this.dragPoint = point;
+    this.dragPreview.setVisible(true);
+    this.dragPreview.setPosition(point.x, point.y);
+    this.dragPreview.setValid(this.dragValid);
+  }
+
+  confirmDrop() {
+    if (this.dragValid && this.dragPoint) {
+      this.turrets.push(new Turret(this, this.dragPoint.x, this.dragPoint.y));
+    }
+    this.cancelDrag();
+  }
+
+  cancelDrag() {
+    if (this.dragPreview) {
+      this.dragPreview.destroy();
+      this.dragPreview = null;
+    }
+    this.dragValid = false;
+    this.dragPoint = null;
+  }
+
+  canvasPointFromClient(clientX, clientY) {
+    const rect = this.game.canvas.getBoundingClientRect();
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+      return null;
+    }
+
+    const scaleX = this.game.canvas.width / rect.width;
+    const scaleY = this.game.canvas.height / rect.height;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
   }
 
   update(time, delta) {

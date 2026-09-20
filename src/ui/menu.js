@@ -1,14 +1,31 @@
-import { getSelectedTower, setSelectedTower } from './selection.js';
+import { getGameScene } from './gameSceneRef.js';
 
-const TOWER_BUTTONS = [{ id: 'turret-button', type: 'turret' }];
+const DRAGGABLE_TOWERS = [{ id: 'turret-button', type: 'turret' }];
 
 export function initMenu() {
-  TOWER_BUTTONS.forEach(({ id, type }) => {
+  DRAGGABLE_TOWERS.forEach(({ id, type }) => {
     const button = document.getElementById(id);
-    button.addEventListener('click', () => {
-      const isSelected = getSelectedTower() === type;
-      setSelectedTower(isSelected ? null : type);
-      button.classList.toggle('selected', !isSelected);
+
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      const scene = getGameScene();
+      if (!scene) return;
+
+      scene.startDragPreview(type);
+      scene.updateDragPreview(event.clientX, event.clientY);
+
+      const handleMove = (moveEvent) => {
+        scene.updateDragPreview(moveEvent.clientX, moveEvent.clientY);
+      };
+
+      const handleUp = () => {
+        scene.confirmDrop();
+        document.removeEventListener('pointermove', handleMove);
+        document.removeEventListener('pointerup', handleUp);
+      };
+
+      document.addEventListener('pointermove', handleMove);
+      document.addEventListener('pointerup', handleUp);
     });
   });
 }
