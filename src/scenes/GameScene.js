@@ -13,11 +13,13 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
+    this.turrets = [];
     this.drawPath();
 
     this.input.on('pointerdown', (pointer) => {
       if (this.isOnPath(pointer.x, pointer.y)) return;
-      new Turret(this, pointer.x, pointer.y);
+      if (this.overlapsTurret(pointer.x, pointer.y)) return;
+      this.turrets.push(new Turret(this, pointer.x, pointer.y));
     });
   }
 
@@ -44,5 +46,12 @@ export default class GameScene extends Phaser.Scene {
       if (distance < threshold) return true;
     }
     return false;
+  }
+
+  overlapsTurret(x, y) {
+    const threshold = TURRET_RADIUS * 2;
+    return this.turrets.some(
+      (turret) => Phaser.Math.Distance.Between(x, y, turret.x, turret.y) < threshold
+    );
   }
 }
