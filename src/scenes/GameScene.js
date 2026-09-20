@@ -300,14 +300,54 @@ export default class GameScene extends Phaser.Scene {
 
   drawPath() {
     const graphics = this.add.graphics();
-    graphics.lineStyle(PATH_WIDTH, 0x4a4a2a, 1);
 
+    // Mortar edge, peeking out from behind the brick surface.
+    graphics.lineStyle(PATH_WIDTH + 4, 0x3a2e28, 1);
+    this.strokePathLine(graphics);
+
+    // Brick road surface.
+    graphics.lineStyle(PATH_WIDTH, 0x8f5a3c, 1);
+    this.strokePathLine(graphics);
+
+    this.drawBrickJoints(graphics);
+  }
+
+  strokePathLine(graphics) {
     graphics.beginPath();
     graphics.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
     for (let i = 1; i < this.pathPoints.length; i++) {
       graphics.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
     }
     graphics.strokePath();
+  }
+
+  // Perpendicular mortar joints plus a lengthwise seam, to read as two rows
+  // of bricks running along the road instead of a flat stripe.
+  drawBrickJoints(graphics) {
+    const BRICK_LENGTH = 26;
+    const halfWidth = PATH_WIDTH / 2;
+
+    graphics.lineStyle(2, 0x5c3d2e, 0.55);
+    for (let i = 0; i < this.pathPoints.length - 1; i++) {
+      const a = this.pathPoints[i];
+      const b = this.pathPoints[i + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      const dirX = dx / length;
+      const dirY = dy / length;
+      const perpX = -dirY * halfWidth;
+      const perpY = dirX * halfWidth;
+
+      for (let t = BRICK_LENGTH; t < length; t += BRICK_LENGTH) {
+        const px = a.x + dirX * t;
+        const py = a.y + dirY * t;
+        graphics.lineBetween(px - perpX, py - perpY, px + perpX, py + perpY);
+      }
+    }
+
+    graphics.lineStyle(1, 0x5c3d2e, 0.4);
+    this.strokePathLine(graphics);
   }
 
   isOnPath(x, y) {
