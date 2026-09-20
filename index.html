@@ -28,7 +28,11 @@
       display: block;
     }
     #ui-panel {
-      display: none;
+      /* visibility (not display) so its 200px stays reserved even while
+         hidden on the menu — otherwise game-container briefly renders at
+         full width, then jumps down to the sidebar-adjusted width once
+         GameScene reveals it, causing a visible resize flash. */
+      visibility: hidden;
       width: 200px;
       background: #1a1a1a;
       border-left: 1px solid #333;

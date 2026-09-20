@@ -11,7 +11,7 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   create() {
-    document.getElementById('ui-panel').style.display = 'none';
+    document.getElementById('ui-panel').style.visibility = 'hidden';
 
     this.add
       .text(GAME_WIDTH / 2, 220, 'TOWER DEFENSE', {

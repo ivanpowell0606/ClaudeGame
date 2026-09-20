@@ -20,7 +20,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
-    document.getElementById('ui-panel').style.display = 'block';
+    document.getElementById('ui-panel').style.visibility = 'visible';
     document.getElementById('start-wave-button').textContent = `Start ${this.area.wave.name}`;
 
     this.pathPoints = this.area.pathTiles.map(tileToWorld);
