@@ -46,6 +46,17 @@ export default class Turret extends Phaser.GameObjects.Container {
     this.rangeCircle.setStrokeStyle(1, accent, isValid ? 0.4 : 0.6);
   }
 
+  // Called once on release (drag/drop or nudge end), never mid-drag, so a
+  // turret only goes active — and only locks in place — once the player
+  // actually lets go of it.
+  finalizePlacement(isValid) {
+    this.isValid = isValid;
+    this.setValid(isValid);
+    if (isValid) {
+      this.disableInteractive();
+    }
+  }
+
   // Rotates toward the predicted intercept point if the target is in range.
   // Returns whether it's in range.
   trackTarget(target, targetVelocity) {

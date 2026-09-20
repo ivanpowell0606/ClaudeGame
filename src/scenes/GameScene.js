@@ -76,12 +76,21 @@ export default class GameScene extends Phaser.Scene {
       this.turrets.forEach((turret) => {
         if (turret.isValid) return;
         turret.setPosition(turret.x + dx, turret.y + dy);
-        turret.isValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
-        turret.setValid(turret.isValid);
+        // Tint-only preview while dragging — doesn't activate the turret
+        // until the pointer is released.
+        const wouldBeValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
+        turret.setValid(wouldBeValid);
       });
     });
 
     this.input.on('pointerup', () => {
+      if (this.nudgeActive) {
+        this.turrets.forEach((turret) => {
+          if (turret.isValid) return;
+          const finalValid = !this.isOnPath(turret.x, turret.y) && !this.overlapsTurret(turret.x, turret.y, turret);
+          turret.finalizePlacement(finalValid);
+        });
+      }
       this.nudgeActive = false;
       this.lastNudgePoint = null;
     });
@@ -127,8 +136,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.dragPreview && this.dragPoint) {
       const turret = this.dragPreview;
       turret.alpha = 1;
-      turret.isValid = this.dragValid;
-      turret.setValid(this.dragValid);
+      turret.finalizePlacement(this.dragValid);
       this.turrets.push(turret);
       this.dragPreview = null;
     }
