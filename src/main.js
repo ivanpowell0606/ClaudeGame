@@ -10,6 +10,9 @@ const config = {
   type: Phaser.AUTO,
   backgroundColor: '#1e1e1e',
   parent: 'game-container',
+  render: {
+    antialias: true,
+  },
   scale: {
     mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,

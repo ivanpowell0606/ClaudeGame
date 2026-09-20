@@ -1,7 +1,7 @@
 // Grid + path definitions. Tile coordinates are [col, row].
 // Extend this as levels are added.
 
-export const TILE_SIZE = 64;
+export const TILE_SIZE = 128;
 export const GRID_COLS = 15;
 export const GRID_ROWS = 10;
 

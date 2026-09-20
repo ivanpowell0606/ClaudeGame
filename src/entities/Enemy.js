@@ -1,12 +1,12 @@
 // Simple placeholder enemy: a circle that walks the path at a fixed speed.
 
-export const ENEMY_RADIUS = 12;
-export const ENEMY_SPEED = 80; // pixels per second
+export const ENEMY_RADIUS = 24;
+export const ENEMY_SPEED = 160; // pixels per second
 export const ENEMY_MAX_HEALTH = 22;
 
-const HEALTH_BAR_WIDTH = 30;
-const HEALTH_BAR_HEIGHT = 5;
-const HEALTH_BAR_OFFSET_Y = -(ENEMY_RADIUS + 10);
+const HEALTH_BAR_WIDTH = 60;
+const HEALTH_BAR_HEIGHT = 10;
+const HEALTH_BAR_OFFSET_Y = -(ENEMY_RADIUS + 20);
 
 export default class Enemy extends Phaser.GameObjects.Container {
   constructor(scene, path) {
@@ -19,7 +19,7 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.velocity = { x: 0, y: 0 };
     this.health = ENEMY_MAX_HEALTH;
 
-    const body = scene.add.circle(0, 0, ENEMY_RADIUS, 0xd1495b).setStrokeStyle(2, 0x7a1f2b);
+    const body = scene.add.circle(0, 0, ENEMY_RADIUS, 0xd1495b).setStrokeStyle(4, 0x7a1f2b);
 
     const barX = -HEALTH_BAR_WIDTH / 2;
     const healthBarBg = scene.add

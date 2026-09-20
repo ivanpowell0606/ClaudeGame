@@ -14,7 +14,7 @@ import { WAVE_ONE } from '../config/waves.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
-const CLICK_MOVE_THRESHOLD = 6;
+const CLICK_MOVE_THRESHOLD = 12;
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -304,23 +304,23 @@ export default class GameScene extends Phaser.Scene {
     this.drawPathShadow(graphics);
 
     // Mortar edge, peeking out from behind the brick surface.
-    graphics.lineStyle(PATH_WIDTH + 4, 0x3a2e28, 1);
+    graphics.lineStyle(PATH_WIDTH + 8, 0x3a2e28, 1);
     this.strokePathLine(graphics);
 
     // Warm rim catching the light at the road's edges — also shows through
     // the gaps between individual bricks below.
-    graphics.lineStyle(PATH_WIDTH + 1, 0xc98f68, 0.35);
+    graphics.lineStyle(PATH_WIDTH + 2, 0xc98f68, 0.35);
     this.strokePathLine(graphics);
 
     this.drawBrickSurface(graphics);
   }
 
   drawPathShadow(graphics) {
-    graphics.lineStyle(PATH_WIDTH + 6, 0x000000, 0.3);
+    graphics.lineStyle(PATH_WIDTH + 12, 0x000000, 0.3);
     graphics.beginPath();
-    graphics.moveTo(this.pathPoints[0].x + 4, this.pathPoints[0].y + 5);
+    graphics.moveTo(this.pathPoints[0].x + 8, this.pathPoints[0].y + 10);
     for (let i = 1; i < this.pathPoints.length; i++) {
-      graphics.lineTo(this.pathPoints[i].x + 4, this.pathPoints[i].y + 5);
+      graphics.lineTo(this.pathPoints[i].x + 8, this.pathPoints[i].y + 10);
     }
     graphics.strokePath();
   }
@@ -337,9 +337,9 @@ export default class GameScene extends Phaser.Scene {
   // Individual brick fills (alternating tones) with small mortar gaps
   // between them, plus a lengthwise seam suggesting two rows of bricks.
   drawBrickSurface(graphics) {
-    const BRICK_LENGTH = 26;
-    const BRICK_GAP = 2;
-    const brickHalfWidth = PATH_WIDTH / 2 - 1;
+    const BRICK_LENGTH = 52;
+    const BRICK_GAP = 4;
+    const brickHalfWidth = PATH_WIDTH / 2 - 2;
     const shades = [0x9c5f3f, 0x8a5136, 0x976049];
     let brickIndex = 0;
 
@@ -376,7 +376,7 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    graphics.lineStyle(1, 0x5c3d2e, 0.35);
+    graphics.lineStyle(2, 0x5c3d2e, 0.35);
     this.strokePathLine(graphics);
   }
 
