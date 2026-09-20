@@ -8,6 +8,7 @@ import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
+import { WAVE_ONE } from '../config/waves.js';
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
@@ -21,8 +22,10 @@ export default class GameScene extends Phaser.Scene {
     this.pathPoints = ENEMY_PATH_TILES.map(tileToWorld);
     this.turrets = [];
     this.bullets = [];
-    this.enemy = null;
+    this.enemies = [];
     this.waveActive = false;
+    this.enemiesSpawned = 0;
+    this.spawnTimer = 0;
     this.dragPreview = null;
     this.dragValid = false;
     this.dragPoint = null;
@@ -107,8 +110,36 @@ export default class GameScene extends Phaser.Scene {
   startWave() {
     if (this.waveActive) return;
     this.waveActive = true;
-    // Test wave: a single enemy walking the path.
-    this.enemy = new Enemy(this, this.pathPoints);
+    this.enemiesSpawned = 0;
+    this.spawnTimer = 0;
+  }
+
+  updateSpawning(delta) {
+    if (!this.waveActive) return;
+    if (this.enemiesSpawned >= WAVE_ONE.enemyCount) return;
+
+    this.spawnTimer += delta;
+    if (this.spawnTimer >= WAVE_ONE.spawnIntervalMs) {
+      this.spawnTimer -= WAVE_ONE.spawnIntervalMs;
+      this.enemies.push(new Enemy(this, this.pathPoints));
+      this.enemiesSpawned++;
+    }
+  }
+
+  // Nearest enemy to a turret is also the one most likely in range, since
+  // any farther enemy would be even less likely to be — so this alone
+  // decides who a turret aims at.
+  findNearestEnemy(turret) {
+    let nearest = null;
+    let nearestDistance = Infinity;
+    this.enemies.forEach((enemy) => {
+      const distance = Phaser.Math.Distance.Between(turret.x, turret.y, enemy.x, enemy.y);
+      if (distance < nearestDistance) {
+        nearest = enemy;
+        nearestDistance = distance;
+      }
+    });
+    return nearest;
   }
 
   // --- Drag-and-drop placement, driven by the HTML tower menu ---
@@ -179,46 +210,47 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (this.enemy) {
-      this.enemy.update(delta);
+    this.updateSpawning(delta);
 
-      if (this.enemy.reachedEnd) {
-        this.enemy.destroy();
-        this.enemy = null;
-        this.waveActive = false;
+    this.enemies.forEach((enemy) => enemy.update(delta));
+    this.enemies = this.enemies.filter((enemy) => {
+      if (enemy.reachedEnd) {
+        enemy.destroy();
+        return false;
       }
-    }
+      return true;
+    });
 
-    if (this.enemy) {
-      this.turrets.forEach((turret) => {
-        if (!turret.isValid) return;
+    this.turrets.forEach((turret) => {
+      if (!turret.isValid) return;
 
-        const inRange = turret.trackTarget(this.enemy, this.enemy.getVelocity());
-        if (inRange && turret.canFire(time)) {
-          turret.markFired(time);
-          const tip = turret.getBarrelTip();
-          const aim = turret.aimPoint;
-          const angle = Phaser.Math.Angle.Between(tip.x, tip.y, aim.x, aim.y);
-          this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
-        }
-      });
-    }
+      const target = this.findNearestEnemy(turret);
+      if (!target) return;
+
+      const inRange = turret.trackTarget(target, target.getVelocity());
+      if (inRange && turret.canFire(time)) {
+        turret.markFired(time);
+        const tip = turret.getBarrelTip();
+        const aim = turret.aimPoint;
+        const angle = Phaser.Math.Angle.Between(tip.x, tip.y, aim.x, aim.y);
+        this.bullets.push(new Bullet(this, tip.x, tip.y, angle));
+      }
+    });
 
     this.bullets = this.bullets.filter((bullet) => {
       bullet.update(delta);
 
-      if (this.enemy) {
-        const distance = Phaser.Math.Distance.Between(bullet.x, bullet.y, this.enemy.x, this.enemy.y);
-        if (distance <= HIT_DISTANCE) {
-          const killed = this.enemy.takeDamage(BULLET_DAMAGE);
-          bullet.destroy();
-          if (killed) {
-            this.enemy.destroy();
-            this.enemy = null;
-            this.waveActive = false;
-          }
-          return false;
+      const hitEnemy = this.enemies.find(
+        (enemy) => Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y) <= HIT_DISTANCE
+      );
+      if (hitEnemy) {
+        const killed = hitEnemy.takeDamage(BULLET_DAMAGE);
+        bullet.destroy();
+        if (killed) {
+          hitEnemy.destroy();
+          this.enemies = this.enemies.filter((enemy) => enemy !== hitEnemy);
         }
+        return false;
       }
 
       if (bullet.expired) {
@@ -227,6 +259,10 @@ export default class GameScene extends Phaser.Scene {
       }
       return true;
     });
+
+    if (this.waveActive && this.enemiesSpawned >= WAVE_ONE.enemyCount && this.enemies.length === 0) {
+      this.waveActive = false;
+    }
   }
 
   drawPath() {
