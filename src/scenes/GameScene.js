@@ -4,8 +4,11 @@ import Enemy, { ENEMY_RADIUS } from '../entities/Enemy.js';
 import Bullet, { BULLET_RADIUS, BULLET_DAMAGE } from '../entities/Bullet.js';
 import { distanceToSegment } from '../utils/geometry.js';
 import { setGameScene } from '../ui/gameSceneRef.js';
-import { openUpgradeMenu } from '../ui/upgradeMenu.js';
-import { STARTING_CASH, TURRET_COST, ENEMY_REWARD } from '../config/economy.js';
+import { openUpgradeMenu, closeUpgradeMenu } from '../ui/upgradeMenu.js';
+import { showResultOverlay } from '../ui/resultOverlay.js';
+import { STARTING_CASH, TURRET_COST, ENEMY_REWARD, STARTING_HP, LEAK_DAMAGE } from '../config/economy.js';
+
+const TOWER_CLASSES = { turret: Turret };
 
 const HIT_DISTANCE = ENEMY_RADIUS + BULLET_RADIUS;
 const NUDGE_FACTOR = 0.25;
@@ -29,6 +32,10 @@ export default class GameScene extends Phaser.Scene {
     this.enemies = [];
     this.cash = STARTING_CASH;
     this.updateCashDisplay();
+    this.hp = STARTING_HP;
+    this.updateHpDisplay();
+    this.finished = false;
+    this.victory = false;
     this.waveIndex = 0;
     this.currentWave = null;
     this.waveActive = false;
@@ -45,13 +52,19 @@ export default class GameScene extends Phaser.Scene {
     this.drawPath();
 
     setGameScene(this);
+    this.events.once('shutdown', () => {
+      setGameScene(null);
+      closeUpgradeMenu();
+    });
 
     // Require a small movement before Phaser treats a press-and-move on a
     // turret as a drag, so a plain click (below) isn't swallowed as one.
     this.input.dragDistanceThreshold = CLICK_MOVE_THRESHOLD;
 
-    // Re-grabbing an already-placed turret (valid or stuck in an invalid
-    // spot) reuses the same preview mechanic as a fresh menu drag.
+    // Re-grabbing a turret reuses the same preview mechanic as a fresh menu
+    // drag. Only unpaid/invalid (stuck) turrets are draggable at all — a
+    // successfully paid/valid one disables its own interactivity in
+    // Turret.finalizePlacement, so this only ever fires for the former.
     this.input.on('dragstart', (pointer, gameObject) => {
       if (!(gameObject instanceof Turret)) return;
       const index = this.turrets.indexOf(gameObject);
@@ -161,11 +174,23 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // --- Wave control, driven by the Start Wave button ---
+  // --- Base HP: every leaked enemy costs HP; 0 ends the run ---
 
-  isWaveActive() {
-    return this.waveActive;
+  updateHpDisplay() {
+    document.getElementById('hp-display').textContent = `${Math.max(0, this.hp)} HP`;
   }
+
+  takeLeakDamage() {
+    if (this.finished) return;
+
+    this.hp -= LEAK_DAMAGE;
+    this.updateHpDisplay();
+    if (this.hp <= 0) {
+      this.endRun(false);
+    }
+  }
+
+  // --- Wave control, driven by the Start Wave button ---
 
   hasMoreWaves() {
     return this.waveIndex < this.area.waves.length;
@@ -173,19 +198,52 @@ export default class GameScene extends Phaser.Scene {
 
   updateWaveButtonLabel() {
     const button = document.getElementById('start-wave-button');
-    if (this.hasMoreWaves()) {
+    if (this.finished) {
+      button.textContent = this.victory ? 'Area Cleared' : 'Game Over';
+      button.disabled = true;
+    } else if (this.hasMoreWaves()) {
       button.textContent = `Start ${this.area.waves[this.waveIndex].name}`;
+      button.disabled = this.waveActive;
     } else {
       button.textContent = 'All Waves Cleared';
+      button.disabled = true;
     }
   }
 
   startWave() {
-    if (this.waveActive || !this.hasMoreWaves()) return;
+    if (this.finished || this.waveActive || !this.hasMoreWaves()) return;
     this.currentWave = this.area.waves[this.waveIndex];
     this.waveActive = true;
     this.enemiesSpawned = 0;
     this.spawnTimer = 0;
+    this.updateWaveButtonLabel();
+  }
+
+  // Ends the run once, either in defeat (ran out of HP) or victory (cleared
+  // the area's last wave), and shows the results overlay.
+  endRun(victory) {
+    if (this.finished) return;
+    this.finished = true;
+    this.victory = victory;
+    this.waveActive = false;
+    this.updateWaveButtonLabel();
+
+    showResultOverlay({
+      victory,
+      titleText: victory ? 'Area Cleared!' : 'Game Over',
+      messageText: victory
+        ? `You cleared all ${this.area.waves.length} waves with ${Math.max(0, this.hp)} HP left.`
+        : `Your base fell on ${this.currentWave.name}.`,
+    });
+  }
+
+  replayArea() {
+    this.scene.restart({ area: this.area });
+  }
+
+  returnToMenu() {
+    document.getElementById('ui-panel').style.visibility = 'hidden';
+    this.scene.start('MenuScene');
   }
 
   updateSpawning(delta) {
@@ -218,8 +276,9 @@ export default class GameScene extends Phaser.Scene {
 
   // --- Drag-and-drop placement, driven by the HTML tower menu ---
 
-  startDragPreview() {
-    this.dragPreview = new Turret(this, -1000, -1000);
+  startDragPreview(type) {
+    const TowerClass = TOWER_CLASSES[type] || Turret;
+    this.dragPreview = new TowerClass(this, -1000, -1000);
     this.dragPreview.alpha = 0.6;
     this.dragPreview.showRange();
     this.dragPreview.setVisible(false);
@@ -296,6 +355,7 @@ export default class GameScene extends Phaser.Scene {
     this.enemies = this.enemies.filter((enemy) => {
       if (enemy.reachedEnd) {
         enemy.destroy();
+        this.takeLeakDamage();
         return false;
       }
       return true;
@@ -345,7 +405,11 @@ export default class GameScene extends Phaser.Scene {
     if (this.waveActive && this.enemiesSpawned >= this.currentWave.enemyCount && this.enemies.length === 0) {
       this.waveActive = false;
       this.waveIndex++;
-      this.updateWaveButtonLabel();
+      if (this.hasMoreWaves()) {
+        this.updateWaveButtonLabel();
+      } else {
+        this.endRun(true);
+      }
     }
   }
 

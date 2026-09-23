@@ -3,9 +3,11 @@ import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import { initMenu } from './ui/menu.js';
 import { initUpgradeMenu } from './ui/upgradeMenu.js';
+import { initResultOverlay } from './ui/resultOverlay.js';
 
 initMenu();
 initUpgradeMenu();
+initResultOverlay();
 
 const config = {
   type: Phaser.AUTO,

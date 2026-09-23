@@ -31,14 +31,11 @@ export function initMenu() {
     });
   });
 
+  // Button text/disabled state is driven directly by GameScene
+  // (updateWaveButtonLabel) whenever a wave starts, ends, or the run
+  // finishes — no polling needed.
   const startButton = document.getElementById('start-wave-button');
   startButton.addEventListener('click', () => {
     getGameScene()?.startWave();
   });
-
-  setInterval(() => {
-    const scene = getGameScene();
-    if (!scene) return;
-    startButton.disabled = scene.isWaveActive() || !scene.hasMoreWaves();
-  }, 200);
 }

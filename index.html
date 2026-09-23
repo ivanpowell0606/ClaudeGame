@@ -68,6 +68,20 @@
     .tower-button:active {
       cursor: grabbing;
     }
+    #hp-display {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #301f1f;
+      border: 1px solid #5a3838;
+      border-radius: 4px;
+      color: #e0a09b;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      box-sizing: border-box;
+    }
     #cash-display {
       display: block;
       width: 100%;
@@ -180,13 +194,92 @@
       color: #777;
       font-size: 14px;
     }
+
+    #result-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #result-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #result-panel {
+      width: 360px;
+      max-width: 90vw;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 32px;
+      font-family: sans-serif;
+      color: #ccc;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    #result-panel.victory {
+      border-color: #3f8a4d;
+    }
+    #result-panel.defeat {
+      border-color: #8a3f3f;
+    }
+    #result-title {
+      margin: 0 0 12px;
+      font-size: 28px;
+      color: #eee;
+    }
+    #result-panel.victory #result-title {
+      color: #a9e08f;
+    }
+    #result-panel.defeat #result-title {
+      color: #e0a09b;
+    }
+    #result-message {
+      margin: 0 0 24px;
+      font-size: 14px;
+      color: #999;
+    }
+    #result-panel button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #2c2f36;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #result-panel button:last-child {
+      margin-bottom: 0;
+    }
+    #result-panel button:hover {
+      background: #383c45;
+    }
+    #result-replay-button {
+      background: #2f6b3a !important;
+      border-color: #3f8a4d !important;
+      color: #eafbea !important;
+    }
+    #result-replay-button:hover {
+      background: #37803f !important;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="game-container"></div>
     <div id="ui-panel">
-      <div id="cash-display">$1000</div>
+      <div id="hp-display"></div>
+      <div id="cash-display"></div>
       <button id="start-wave-button">Start Wave 1</button>
       <h2>Towers</h2>
       <button id="turret-button" class="tower-button">Turret</button>
@@ -199,6 +292,15 @@
     <h2>Turret Upgrades</h2>
     <p class="upgrade-subtitle" id="upgrade-subtitle"></p>
     <p id="upgrade-empty-state">No upgrades available yet.</p>
+  </div>
+
+  <div id="result-backdrop">
+    <div id="result-panel">
+      <h2 id="result-title"></h2>
+      <p id="result-message"></p>
+      <button id="result-replay-button">Replay Area</button>
+      <button id="result-menu-button">Area Select</button>
+    </div>
   </div>
 
   <script src="vendor/phaser.min.js"></script>
