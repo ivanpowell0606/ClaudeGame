@@ -30,13 +30,18 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const totalWidth = AREAS.length * CARD_WIDTH + (AREAS.length - 1) * CARD_GAP;
+    // One extra slot beyond the real areas, reserved for the next area to
+    // be built — shown locked for now.
+    const cardCount = AREAS.length + 1;
+    const totalWidth = cardCount * CARD_WIDTH + (cardCount - 1) * CARD_GAP;
     const startX = GAME_WIDTH / 2 - totalWidth / 2 + CARD_WIDTH / 2;
     const cardY = 520;
 
     AREAS.forEach((area, index) => {
       this.createAreaCard(area, startX + index * (CARD_WIDTH + CARD_GAP), cardY);
     });
+
+    this.createLockedCard('Area 2', startX + AREAS.length * (CARD_WIDTH + CARD_GAP), cardY);
   }
 
   createAreaCard(area, x, y) {
@@ -81,6 +86,34 @@ export default class MenuScene extends Phaser.Scene {
       this.scene.start('GameScene', { area });
     });
 
+    return container;
+  }
+
+  // A dimmed, non-interactive placeholder for an area that doesn't exist
+  // yet, so the menu grid visibly has room for more.
+  createLockedCard(name, x, y) {
+    const container = this.add.container(x, y);
+
+    const bg = this.add
+      .rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, 0x202226)
+      .setStrokeStyle(4, 0x333333);
+    const label = this.add
+      .text(0, -50, name, {
+        fontFamily: 'sans-serif',
+        fontSize: '36px',
+        fontStyle: 'bold',
+        color: '#555555',
+      })
+      .setOrigin(0.5);
+    const status = this.add
+      .text(0, 10, 'Coming Soon', {
+        fontFamily: 'sans-serif',
+        fontSize: '18px',
+        color: '#555555',
+      })
+      .setOrigin(0.5);
+
+    container.add([bg, label, status]);
     return container;
   }
 }
